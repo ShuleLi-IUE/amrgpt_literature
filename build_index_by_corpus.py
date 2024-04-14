@@ -31,7 +31,7 @@ vec_db_paper = PaperVectorDB(space=distance,
 # load data from ./corpus
 def init_db_local():
     print("---init local database begin---")
-    corpus_df = "/Users/lishule/Documents/namespace/ARG_surveillance/nlptask/table/final_res_unique_after_mask_samples10.csv"
+    corpus_df = "CORPUS_PATH"
         
     # report pdf
     print("local database of report initing...") 
