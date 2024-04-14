@@ -95,7 +95,7 @@ class PaperVectorDB:
         return self.space
 
     def dump(self, file_dump=None):
-        if file_dump == None: file_dump = 'index_' + 'n'+ str(self.cnt) + '_' + datetime.now().strftime('%m%d%H%M') + '.pickle'
+        if file_dump == None: file_dump = 'index_' + 'n'+ str(self.cnt) + '_' + self.space + '_' + datetime.now().strftime('%m%d%H%M') + '.pickle'
         with open(file_dump, 'wb') as f:
             pickle.dump(self, f)
         print("Dump index successfully, path: " + file_dump)
