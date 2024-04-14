@@ -43,20 +43,21 @@ def search_db(user_input, chatbot, context, search_field, source_type, mode_type
         search_labels = vec_db_paper.search_bge(user_input, top_n)
 
         titles, abstracts, journals, authors, citations, years, links, DOIs = vec_db_paper.get_context_by_labels(search_labels)
-        res = [titles[i] + '. ' + abstracts[i] for i in range(top_n)]
+        res = [titles[i] + '. ' + abstracts[i].strip("'") for i in range(top_n)]
         
-        search_field = "\n\n".join([f"{i+1}. [Reference: {authors[i]}. ({years[i]}). {titles[i]}. {journals[i]}. {DOIs[i]}. {links[i]}. Citations: {citations[i]}]\n{abstracts[i]}" for i in range(top_n)])
+        search_field = "\n\n".join([f"{i+1}. [Reference: {authors[i]}. ({years[i]}). {titles[i]}. {journals[i]}. {DOIs[i]}.]\n{abstracts[i]}" for i in range(top_n)])
         prompt = build_prompt(source_type=source_type, info=[f"{res[i]} [Reference: {titles[i]}, {years[i]}, {journals[i]}]" for i in range(top_n)], query=user_input)
         
     elif mode_type == "Accuracy":
         log_info("===rerank===")
-        # scores, texts, pages, titles, years, countries, ORGs = rerank(user_input, top_n, recall_n, source_type)
-        # res = [texts[i] if countries[i] == 'xxx' else f'In {countries[i]}, {texts[i]}' for i in range(top_n)]
+        scores, titles, abstracts, journals, authors, citations, years, links, DOIs = rerank(user_input, top_n, recall_n, source_type)
+        res = [titles[i] + '. ' + abstracts[i].strip("'") for i in range(top_n)]
 
-        # search_field = "\n\n".join([f"{i+1}. [Reference: {titles[i]}, Page: {pages[i]}, ORG: {ORGs[i]}, Year: {years[i]}]\n{texts[i]}" for i in range(top_n)])
-        # prompt = build_prompt(source_type=source_type, info=[f"{res[i]} [Reference: Page {pages[i]}, {titles[i]}, {years[i]}, {ORGs[i]}]" for i in range(top_n)], query=user_input)
-        search_field, prompt = rerank(user_input, top_n, recall_n, source_type)
-    log_info(f"prompt content built:\n{prompt}")
+        search_field = "\n\n".join([f"{i+1}. [Reference: {authors[i]}. ({years[i]}). {titles[i]}. {journals[i]}. {DOIs[i]}.]\n{abstracts[i]}" for i in range(top_n)])
+        prompt = build_prompt(source_type=source_type, info=[f"{res[i]} [Reference: {titles[i]}, {years[i]}, {journals[i]}]" for i in range(top_n)], query=user_input)
+    
+ 
+    log_info(f"source_type: {source_type}, mode_type: {mode_type}\nprompt content built:\n{prompt}")
     return prompt, search_field
 
 
@@ -75,11 +76,16 @@ def rerank(user_input, top_n, recall_n, source_type):
                             show_progress_bar = False)
     t2 = time.time()
     log_info(f"rerank_model.predict costs: {t2 - t1}")
-    log_info(f"finish rerank {recall_n} texts, return highest {top_n} texts")
 
-    search_field = "\n\n".join([f"{i+1}. [Reference: {authors[i]}. ({years[i]}). {titles[i]}. {journals[i]}. {DOIs[i]}. {links[i]}. Citations: {citations[i]}]\n{abstracts[i]}" for i in range(top_n)])
-    prompt = build_prompt(source_type=source_type, info=[f"{res[i]} [Reference: {titles[i]}, {years[i]}, {journals[i]}]" for i in range(top_n)], query=user_input)
-    return search_field, prompt
+    ids = [i['corpus_id'] for i in res][:top_n]
+    scores = [i['score'] for i in res][:top_n]
+    log_info(f"finish rerank {recall_n} texts, return highest {top_n} texts")
+    
+    titles, abstracts, journals, authors, citations, years, links, DOIs
+    return scores, [titles[i] for i in ids],  [abstracts[i] for i in ids], [journals[i] for i in ids], [authors[i] for i in ids], [citations[i] for i in ids], [years[i] for i in ids], [links[i] for i in ids], [DOIs[i] for i in ids]
+    # search_field = "\n\n".join([f"{i+1}. [Reference: {authors[i]}. ({years[i]}). {titles[i]}. {journals[i]}. {DOIs[i]}. {links[i]}. Citations: {citations[i]}]\n{abstracts[i]}" for i in range(top_n)])
+    # prompt = build_prompt(source_type=source_type, info=[f"{res[i]} [Reference: {titles[i]}, {years[i]}, {journals[i]}]" for i in range(top_n)], query=user_input)
+    # return search_field, prompt
     
 
 def reset_state():
